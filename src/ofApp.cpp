@@ -1,4 +1,5 @@
 #include "ofApp.h"
+#include "ofxEasing.h"
 
 //--------------------------------------------------------------
 void ofApp::setup(){
@@ -6,46 +7,65 @@ void ofApp::setup(){
     h = 1080;
     
     ofSetWindowShape(w, h);
-//    ofSetFrameRate(30);
-//    ofSetVerticalSync(false);
+    ofSetFrameRate(30);
+    ofSetVerticalSync(false);
     
-    fbo.allocate(w, h, GL_RGBA);
+    fbo.allocate(w, h, GL_RGB);
     video.load("faceCropTrimSlow.mp4");
     video.play();
     
     
-    recorder.setVideoCodec("mpeg");
+    recorder.setVideoCodec("mpeg4");
     recorder.setVideoBitrate("100000k");
     
     save = false;
     scale = 5.0;
+    amt = 0.001;
+    
+    inc = 0;
+    
+    fbo.begin();
+        ofClear(0,255);
+    fbo.end();
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
     video.update();
     
-    if(save){
-        ofPixels p;
-        fbo.readToPixels(p);
-        recorder.addFrame(p);
+    if(floor(video.getPosition()*video.getDuration()) == 188){
+        recorder.close();
     }
+    
+    
+    ofSetWindowTitle(ofToString(floor(video.getPosition()*video.getDuration())));
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-//    if(video.isFrameNew()){
+    if(video.isFrameNew()){
+        pos = ofClamp(5 - ofxeasing::map_clamp(inc, 0, 5400, 0, 4, &ofxeasing::quad::easeOut), 1,5);
+        
         fbo.begin();
             ofPushMatrix();
             ofTranslate(w/2, h/2);
-            ofScale(scale, scale);
+            ofScale(pos, pos);
                 video.draw(-w/2,-h/2);
             ofPopMatrix();
         fbo.end();
-//    }
+        inc++;
+        
+        if(save){
+            ofPixels p;
+            fbo.readToPixels(p);
+            recorder.addFrame(p);
+        }
+    }
     
     fbo.draw(0,0);
-    scale -= 0.001;
+//    scale -= amt;
+//    scale = ofClamp(scale, 1.0, 5.0);
+
 }
 
 //--------------------------------------------------------------
@@ -54,6 +74,10 @@ void ofApp::keyPressed(int key){
         recorder.setup("videos/" + ofGetTimestampString() + ".mov", w, h, 30);
         recorder.start();
         save = true;
+    }
+    
+    if(key == '['){
+        amt -= 0.00001;
     }
 }
 

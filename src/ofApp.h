@@ -28,4 +28,7 @@ class ofApp : public ofBaseApp{
         bool save;
         ofxVideoRecorder recorder;
         float scale;
+        float amt;
+        float pos;
+    int inc;
 };
